@@ -1221,6 +1221,7 @@ void do_user_addr_fault(struct pt_regs *regs,
 			unsigned long error_code,
 			unsigned long address)
 {
+	printk(KERN_INFO "Entered do_user_addr_fault\n");
 	struct vm_area_struct *vma;
 	struct task_struct *tsk;
 	struct mm_struct *mm;
@@ -1376,6 +1377,7 @@ retry:
 	 * we can handle it..
 	 */
 good_area:
+	printk(KERN_INFO "Entered good_area\n");
 	if (unlikely(access_error(error_code, vma))) {
 		bad_area_access_error(regs, error_code, address, vma);
 		return;
