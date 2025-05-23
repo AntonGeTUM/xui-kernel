@@ -376,6 +376,7 @@ static inline unsigned int userfaultfd_get_blocking_state(unsigned int flags)
 vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 {
 	printk(KERN_INFO "Entered handle_userfault\n");
+	printk(KERN_INFO "Current process name: %s\n", current->comm);
 	struct mm_struct *mm = vmf->vma->vm_mm;
 	struct userfaultfd_ctx *ctx;
 	struct userfaultfd_wait_queue uwq;
@@ -493,6 +494,12 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 	uwq.wq.private = current;
 	uwq.msg = userfault_msg(vmf->address, vmf->real_address, vmf->flags,
 				reason, ctx->features);
+
+	printk(KERN_INFO "uffd_msg.event = %u\n", uwq.msg.event);
+	printk(KERN_INFO "uffd_msg.pagefault.flags = 0x%llx\n", uwq.msg.arg.pagefault.flags);
+	printk(KERN_INFO "uffd_msg.pagefault.address = 0x%llx\n", uwq.msg.arg.pagefault.address);
+	printk(KERN_INFO "uffd_msg.pagefault.ptid = %u\n", uwq.msg.arg.pagefault.feat.ptid);
+
 	uwq.ctx = ctx;
 	uwq.waken = false;
 
@@ -521,7 +528,9 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 						       vmf->flags, reason);
 	mmap_read_unlock(mm);
 
+	// likely the place to send UINTR
 	if (likely(must_wait && !READ_ONCE(ctx->released))) {
+		printk(KERN_INFO "Notifying\n");
 		wake_up_poll(&ctx->fd_wqh, EPOLLIN);
 		schedule();
 	}

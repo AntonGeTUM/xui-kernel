@@ -4034,6 +4034,8 @@ static vm_fault_t do_anonymous_page(struct vm_fault *vmf)
 	struct page *page;
 	vm_fault_t ret = 0;
 	pte_t entry;
+	// check what process triggered the pagefault
+	//printk(KERN_INFO "Current process name: %s\n", current->comm);
 
 	/* File mapping without ->vm_ops ? */
 	if (vma->vm_flags & VM_SHARED)
