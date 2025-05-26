@@ -1300,7 +1300,7 @@ static int userfaultfd_register(struct userfaultfd_ctx *ctx,
 	ret = -EFAULT;
 	// orig: copy_from_user(&uffdio_register, user_uffdio_register, sizeof(uffdio_register) - sizeof(__u64));
 	if (copy_from_user(&uffdio_register, user_uffdio_register, 24)) {
-		printf(KERN_INFO "Failed first copy_from_user");
+		printk(KERN_INFO "Failed first copy_from_user");
 		goto out;
 	}
 		
