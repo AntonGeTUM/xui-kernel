@@ -381,8 +381,8 @@ static inline unsigned int userfaultfd_get_blocking_state(unsigned int flags)
  */
 vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 {
-	//printk(KERN_INFO "Entered handle_userfault\n");
-	//printk(KERN_INFO "Current process name: %s\n", current->comm);
+	printk(KERN_INFO "Entered handle_userfault\n");
+	printk(KERN_INFO "Current process name: %s\n", current->comm);
 	struct mm_struct *mm = vmf->vma->vm_mm;
 	struct userfaultfd_ctx *ctx;
 	struct userfaultfd_wait_queue uwq;
@@ -539,6 +539,7 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 		// printk(KERN_INFO "Notifying\n");
 		if (uintr) {
 			// send UINTR hopefully
+			printk(KERN_INFO "Sending UINTR\n");
 			asm volatile("senduipi %0" :: "r"(ctx->uintr_target));
 		} else {
 			wake_up_poll(&ctx->fd_wqh, EPOLLIN);
@@ -1310,7 +1311,7 @@ static int userfaultfd_register(struct userfaultfd_ctx *ctx,
 	// get uintr_fd field
 	uintr = copy_from_user(&uffdio_register.uintr_target,
 	    &user_uffdio_register->uintr_target, sizeof(__u64));
-
+	printk(KERN_INFO "Passing UINTR file descriptor to ctx\n");
 	ctx->uintr_target = uffdio_register.uintr_target;
 
 	ret = -EINVAL;
