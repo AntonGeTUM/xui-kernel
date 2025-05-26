@@ -72,6 +72,9 @@ struct userfaultfd_ctx {
 	atomic_t mmap_changing;
 	/* mm with one ore more vmas attached to this userfaultfd_ctx */
 	struct mm_struct *mm;
+
+	// file descriptor for UINTR
+	__u64 uintr_target;
 };
 
 struct userfaultfd_fork_ctx {
@@ -375,8 +378,8 @@ static inline unsigned int userfaultfd_get_blocking_state(unsigned int flags)
  */
 vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 {
-	printk(KERN_INFO "Entered handle_userfault\n");
-	printk(KERN_INFO "Current process name: %s\n", current->comm);
+	//printk(KERN_INFO "Entered handle_userfault\n");
+	//printk(KERN_INFO "Current process name: %s\n", current->comm);
 	struct mm_struct *mm = vmf->vma->vm_mm;
 	struct userfaultfd_ctx *ctx;
 	struct userfaultfd_wait_queue uwq;
@@ -495,10 +498,10 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 	uwq.msg = userfault_msg(vmf->address, vmf->real_address, vmf->flags,
 				reason, ctx->features);
 
-	printk(KERN_INFO "uffd_msg.event = %u\n", uwq.msg.event);
-	printk(KERN_INFO "uffd_msg.pagefault.flags = 0x%llx\n", uwq.msg.arg.pagefault.flags);
-	printk(KERN_INFO "uffd_msg.pagefault.address = 0x%llx\n", uwq.msg.arg.pagefault.address);
-	printk(KERN_INFO "uffd_msg.pagefault.ptid = %u\n", uwq.msg.arg.pagefault.feat.ptid);
+	//printk(KERN_INFO "uffd_msg.event = %u\n", uwq.msg.event);
+	//printk(KERN_INFO "uffd_msg.pagefault.flags = 0x%llx\n", uwq.msg.arg.pagefault.flags);
+	//printk(KERN_INFO "uffd_msg.pagefault.address = 0x%llx\n", uwq.msg.arg.pagefault.address);
+	//printk(KERN_INFO "uffd_msg.pagefault.ptid = %u\n", uwq.msg.arg.pagefault.feat.ptid);
 
 	uwq.ctx = ctx;
 	uwq.waken = false;
@@ -530,8 +533,10 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 
 	// likely the place to send UINTR
 	if (likely(must_wait && !READ_ONCE(ctx->released))) {
-		printk(KERN_INFO "Notifying\n");
-		wake_up_poll(&ctx->fd_wqh, EPOLLIN);
+		// printk(KERN_INFO "Notifying\n");
+		//wake_up_poll(&ctx->fd_wqh, EPOLLIN); // no need for this notification
+		// send UINTR hopefully
+		asm volatile("senduipi %0" :: "r"(ctx->uintr_target));
 		schedule();
 	}
 
@@ -1289,6 +1294,15 @@ static int userfaultfd_register(struct userfaultfd_ctx *ctx,
 	if (copy_from_user(&uffdio_register, user_uffdio_register,
 			   sizeof(uffdio_register)-sizeof(__u64)))
 		goto out;
+
+	// default case
+	uffdio_register.uintr_target = 0;
+	// get uintr_fd field
+	copy_from_user(&uffdio_register.uintr_target,
+	       &user_uffdio_register->uintr_target,
+	       sizeof(__u64));
+
+	ctx->uintr_target = uffdio_register.uintr_target;
 
 	ret = -EINVAL;
 	if (!uffdio_register.mode)
