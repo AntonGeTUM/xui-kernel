@@ -1221,7 +1221,7 @@ void do_user_addr_fault(struct pt_regs *regs,
 			unsigned long error_code,
 			unsigned long address)
 {
-	printk(KERN_INFO "Entered do_user_addr_fault\n");
+	//printk(KERN_INFO "Entered do_user_addr_fault\n");
 	struct vm_area_struct *vma;
 	struct task_struct *tsk;
 	struct mm_struct *mm;
