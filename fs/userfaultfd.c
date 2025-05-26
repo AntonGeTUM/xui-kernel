@@ -77,6 +77,9 @@ struct userfaultfd_ctx {
 	__u64 uintr_target;
 };
 
+// flag
+int uintr = 0;
+
 struct userfaultfd_fork_ctx {
 	struct userfaultfd_ctx *orig;
 	struct userfaultfd_ctx *new;
@@ -534,9 +537,13 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 	// likely the place to send UINTR
 	if (likely(must_wait && !READ_ONCE(ctx->released))) {
 		// printk(KERN_INFO "Notifying\n");
-		//wake_up_poll(&ctx->fd_wqh, EPOLLIN); // no need for this notification
-		// send UINTR hopefully
-		asm volatile("senduipi %0" :: "r"(ctx->uintr_target));
+		if (uintr) {
+			// send UINTR hopefully
+			asm volatile("senduipi %0" :: "r"(ctx->uintr_target));
+		} else {
+			wake_up_poll(&ctx->fd_wqh, EPOLLIN);
+		}		
+		
 		schedule();
 	}
 
@@ -1298,9 +1305,8 @@ static int userfaultfd_register(struct userfaultfd_ctx *ctx,
 	// default case
 	uffdio_register.uintr_target = 0;
 	// get uintr_fd field
-	copy_from_user(&uffdio_register.uintr_target,
-	       &user_uffdio_register->uintr_target,
-	       sizeof(__u64));
+	uintr = copy_from_user(&uffdio_register.uintr_target,
+	    &user_uffdio_register->uintr_target, sizeof(__u64));
 
 	ctx->uintr_target = uffdio_register.uintr_target;
 
