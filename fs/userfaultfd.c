@@ -1298,9 +1298,12 @@ static int userfaultfd_register(struct userfaultfd_ctx *ctx,
 	user_uffdio_register = (struct uffdio_register __user *) arg;
 
 	ret = -EFAULT;
-	if (copy_from_user(&uffdio_register, user_uffdio_register,
-			   sizeof(uffdio_register)-sizeof(__u64)))
+	// orig: copy_from_user(&uffdio_register, user_uffdio_register, sizeof(uffdio_register) - sizeof(__u64));
+	if (copy_from_user(&uffdio_register, user_uffdio_register, 24)) {
+		printf(KERN_INFO "Failed first copy_from_user");
 		goto out;
+	}
+		
 
 	// default case
 	uffdio_register.uintr_target = 0;
