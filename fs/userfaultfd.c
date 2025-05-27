@@ -554,7 +554,7 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 		if (!uintr) {
 			// send UINTR hopefully
 			printk(KERN_INFO "Sending UINTR\n");
-			asm volatile("senduipi %0" :: "r"(ctx->uintr_target));
+			asm volatile("senduipi %0" : : "r"(ctx->uintr_target));
 		} else {
 			//wake_up_poll(&ctx->fd_wqh, EPOLLIN);
 		}		
@@ -1314,8 +1314,10 @@ static int userfaultfd_register(struct userfaultfd_ctx *ctx,
 
 	ret = -EFAULT;
 	// orig: copy_from_user(&uffdio_register, user_uffdio_register, sizeof(uffdio_register) - sizeof(__u64));
+	int size_check = sizeof(uffdio_register);
+	printf("Size of uffdio_register: %d\n", size_check);
 	if (copy_from_user(&uffdio_register, user_uffdio_register, 24)) {
-		printk(KERN_INFO "Failed first copy_from_user");
+		printk(KERN_INFO "Failed first copy_from_user\n");
 		goto out;
 	}
 		
@@ -1326,7 +1328,7 @@ static int userfaultfd_register(struct userfaultfd_ctx *ctx,
 	uintr = copy_from_user(&uffdio_register.uintr_target,
 	    &user_uffdio_register->uintr_target, sizeof(__u64));
 	if (uintr != 0) {
-    	printk(KERN_ERR "copy_from_user failed, %d bytes not copied\n", uintr);
+    	printk(KERN_ERR "copy_from_user failed, %d uintr_fd not copied\n", uintr);
 	}
 	printk(KERN_INFO "Passing UINTR file descriptor to ctx\n");
 	ctx->uintr_target = uffdio_register.uintr_target;
@@ -1354,8 +1356,11 @@ static int userfaultfd_register(struct userfaultfd_ctx *ctx,
 
 	ret = validate_range(mm, uffdio_register.range.start,
 			     uffdio_register.range.len);
-	if (ret)
+	if (ret) {
+		printk(KERN_INFO "Invalid memory range\n");
 		goto out;
+	}
+		
 
 	start = uffdio_register.range.start;
 	end = start + uffdio_register.range.len;
