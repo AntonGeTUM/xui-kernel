@@ -557,10 +557,11 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 			asm volatile("senduipi %0" : : "r"(ctx->uintr_target));
 		} else {
 			wake_up_poll(&ctx->fd_wqh, EPOLLIN);
+			schedule();
 		}		
 		printk(KERN_INFO "we're past senduipi\n");
-		schedule();
-		printk(KERN_INFO "we're past schedule()\n");
+		//schedule();
+		//printk(KERN_INFO "we're past schedule()\n");
 	}
 	printk(KERN_INFO "Checkpoint 12\n");
 	__set_current_state(TASK_RUNNING);
