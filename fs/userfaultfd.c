@@ -545,6 +545,9 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 	printk(KERN_INFO "Checkpoint 11\n");
 
 	// likely the place to send UINTR
+	printk(KERN_INFO "must_wait = %d\n", must_wait);
+	printk(KERN_INFO "ctx->released = %d\n", READ_ONCE(ctx->released));
+
 	if (likely(must_wait && !READ_ONCE(ctx->released))) {
 		// printk(KERN_INFO "Notifying\n");
 		if (uintr) {
