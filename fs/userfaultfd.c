@@ -31,6 +31,8 @@
 #include <linux/hugetlb.h>
 #include <linux/swapops.h>
 
+#include <linux/printk.h>
+
 int sysctl_unprivileged_userfaultfd __read_mostly;
 
 static struct kmem_cache *userfaultfd_ctx_cachep __read_mostly;
