@@ -567,9 +567,7 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 		if (!uintr) {
 			// send UINTR hopefully
 			printk(KERN_INFO "Sending UINTR\n");
-			struct uintr_uitt_entry *entry = &uitt_ctx->uitt[idx];
-			asm volatile("senduipi %0" : : "r"(entry->target_upid_addr));
-			//asm volatile("senduipi %0" : : "r"(ctx->uintr_target));
+			asm volatile("senduipi %0" : : "r"(ctx->uintr_target));
 		} else {
 			wake_up_poll(&ctx->fd_wqh, EPOLLIN);
 		}		
