@@ -555,13 +555,13 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 			// send UINTR hopefully
 			printk(KERN_INFO "Sending UINTR\n");
 			asm volatile("senduipi %0" : : "r"(ctx->uintr_target));
-		} else {
-			//wake_up_poll(&ctx->fd_wqh, EPOLLIN);
-		}		
+		} //else {
+			wake_up_poll(&ctx->fd_wqh, EPOLLIN);
+		//}		
 		
 		schedule();
 	}
-
+	printk(KERN_INFO "Checkpoint 12\n");
 	__set_current_state(TASK_RUNNING);
 
 	/*
@@ -583,16 +583,17 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 		 * No need of list_del_init(), the uwq on the stack
 		 * will be freed shortly anyway.
 		 */
+		printk(KERN_INFO "About to remove queue entry\n");
 		list_del(&uwq.wq.entry);
 		spin_unlock_irq(&ctx->fault_pending_wqh.lock);
 	}
-
+	printk(KERN_INFO "Checkpoint 13\n");
 	/*
 	 * ctx may go away after this if the userfault pseudo fd is
 	 * already released.
 	 */
 	userfaultfd_ctx_put(ctx);
-
+	printk(KERN_INFO "Checkpoint 14\n");
 out:
 	return ret;
 }
