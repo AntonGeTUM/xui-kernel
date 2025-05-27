@@ -1004,6 +1004,8 @@ static int do_uintr_register_handler(u64 handler, unsigned int flags)
 			return -ENOMEM;
 		t->thread.upid_ctx = upid_ctx;
 	}
+	pr_info("upid_ctx %p upid %p\n", upid_ctx, upid_ctx->upid);
+
 
 	/*
 	 * UPID and upid_activated will be referenced during context switch. Need to
