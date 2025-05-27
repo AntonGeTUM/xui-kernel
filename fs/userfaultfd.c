@@ -508,10 +508,10 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 				reason, ctx->features);
 
 	printk(KERN_INFO "Checkpoint 8\n");
-	//printk(KERN_INFO "uffd_msg.event = %u\n", uwq.msg.event);
-	//printk(KERN_INFO "uffd_msg.pagefault.flags = 0x%llx\n", uwq.msg.arg.pagefault.flags);
-	//printk(KERN_INFO "uffd_msg.pagefault.address = 0x%llx\n", uwq.msg.arg.pagefault.address);
-	//printk(KERN_INFO "uffd_msg.pagefault.ptid = %u\n", uwq.msg.arg.pagefault.feat.ptid);
+	printk(KERN_INFO "uffd_msg.event = %u\n", uwq.msg.event);
+	printk(KERN_INFO "uffd_msg.pagefault.flags = 0x%llx\n", uwq.msg.arg.pagefault.flags);
+	printk(KERN_INFO "uffd_msg.pagefault.address = 0x%llx\n", uwq.msg.arg.pagefault.address);
+	printk(KERN_INFO "uffd_msg.pagefault.ptid = %u\n", uwq.msg.arg.pagefault.feat.ptid);
 
 	uwq.ctx = ctx;
 	uwq.waken = false;
@@ -548,11 +548,13 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 	printk(KERN_INFO "must_wait = %d\n", must_wait);
 	printk(KERN_INFO "ctx->released = %d\n", READ_ONCE(ctx->released));
 	printk(KERN_INFO "uintr-flag = %d\n", uintr);
+	printk(KERN_INFO "UINTR target = %llu\n", ctx->uintr_target);
 	if (likely(must_wait && !READ_ONCE(ctx->released))) {
 		// printk(KERN_INFO "Notifying\n");
 		if (!uintr) {
 			// send UINTR hopefully
 			printk(KERN_INFO "Sending UINTR\n");
+			console_flush();
 			asm volatile("senduipi %0" :: "r"(ctx->uintr_target));
 		} else {
 			//wake_up_poll(&ctx->fd_wqh, EPOLLIN);
