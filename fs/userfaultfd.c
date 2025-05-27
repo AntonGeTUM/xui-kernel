@@ -31,8 +31,6 @@
 #include <linux/hugetlb.h>
 #include <linux/swapops.h>
 
-#include <linux/printk.h>
-
 int sysctl_unprivileged_userfaultfd __read_mostly;
 
 static struct kmem_cache *userfaultfd_ctx_cachep __read_mostly;
@@ -556,7 +554,6 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 		if (!uintr) {
 			// send UINTR hopefully
 			printk(KERN_INFO "Sending UINTR\n");
-			console_flush();
 			asm volatile("senduipi %0" :: "r"(ctx->uintr_target));
 		} else {
 			//wake_up_poll(&ctx->fd_wqh, EPOLLIN);
