@@ -31,6 +31,8 @@
 #include <linux/hugetlb.h>
 #include <linux/swapops.h>
 
+#include <asm/uintr.h>
+
 int sysctl_unprivileged_userfaultfd __read_mostly;
 
 static struct kmem_cache *userfaultfd_ctx_cachep __read_mostly;
@@ -543,8 +545,7 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 						       vmf->flags, reason);
 	mmap_read_unlock(mm);
 	printk(KERN_INFO "Checkpoint 11\n");
-	
-	asm volatile("senduipi %0" : : "r"(ctx->uintr_target));
+
 	// likely the place to send UINTR
 	printk(KERN_INFO "must_wait = %d\n", must_wait);
 	printk(KERN_INFO "ctx->released = %d\n", READ_ONCE(ctx->released));
@@ -558,11 +559,10 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 			asm volatile("senduipi %0" : : "r"(ctx->uintr_target));
 		} else {
 			wake_up_poll(&ctx->fd_wqh, EPOLLIN);
-			schedule();
 		}		
 		printk(KERN_INFO "we're past senduipi\n");
-		//schedule();
-		//printk(KERN_INFO "we're past schedule()\n");
+		schedule();
+		printk(KERN_INFO "we're past schedule()\n");
 	}
 	printk(KERN_INFO "Checkpoint 12\n");
 	__set_current_state(TASK_RUNNING);
@@ -1337,9 +1337,12 @@ static int userfaultfd_register(struct userfaultfd_ctx *ctx,
 	}
 	if (uffdio_register.uintr_target == -1) {
 		uintr = -1;
+		ctx->uintr_target = uffdio_register.uintr_target;
+	} else {
+		printk(KERN_INFO "Register sender and save fd to ctx\n");
+		ctx->uintr_target = uintr_register_sender_wrapper(uffdio_register.uintr_target);
 	}
-	printk(KERN_INFO "Passing UINTR file descriptor to ctx\n");
-	ctx->uintr_target = uffdio_register.uintr_target;
+	
 
 	ret = -EINVAL;
 	if (!uffdio_register.mode)

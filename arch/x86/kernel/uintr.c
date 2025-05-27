@@ -574,6 +574,39 @@ static int do_uintr_register_sender(u64 uvec, struct uintr_upid_ctx *upid_ctx)
 
 	return entry;
 }
+// wrapper of function above to expose
+int uintr_register_sender_wrapper(int uvecfd) {
+    struct uvecfd_ctx *uvecfd_ctx;
+	struct file *uvec_f;
+	struct fd f;
+	int ret = 0;
+
+	f = fdget(uvecfd);
+	uvec_f = f.file;
+	if (!uvec_f)
+		return -EBADF;
+
+	if (uvec_f->f_op != &uvecfd_fops) {
+		ret = -EOPNOTSUPP;
+		goto out_fdput;
+	}
+
+	uvecfd_ctx = (struct uvecfd_ctx *)uvec_f->private_data;
+
+	ret = do_uintr_register_sender(uvecfd_ctx->uvec, uvecfd_ctx->upid_ctx);
+	if (ret < 0) {
+		//kfree(s_info);
+		goto out_fdput;
+	}
+
+out_fdput:
+	pr_debug("send: register sender task=%d flags %d ret(uipi_id)=%d\n",
+		 current->pid, flags, ret);
+
+	fdput(f);
+	return ret;
+}
+EXPORT_SYMBOL(uintr_register_sender_wrapper);
 
 static long uipifd_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {

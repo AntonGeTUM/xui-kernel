@@ -92,6 +92,9 @@ void switch_uintr_finish(struct task_struct *next);
 
 void uintr_free(struct task_struct *task);
 
+// Wrapper for exposing functions to the kernel
+int uintr_register_sender_wrapper(u64 uvec, struct uintr_upid_ctx *upid_ctx);
+
 #else /* !CONFIG_X86_USER_INTERRUPTS */
 
 static inline void uintr_destroy_uitt_ctx(struct mm_struct *mm)
