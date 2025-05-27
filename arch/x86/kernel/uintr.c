@@ -770,6 +770,7 @@ SYSCALL_DEFINE1(uintr_ipi_fd, unsigned int, flags)
 SYSCALL_DEFINE2(uintr_register_sender, int, uvecfd, unsigned int, flags)
 {
 	pr_info("Syscall entry point for uintr_register_sender\n");
+	
 	//struct uintr_uitt_ctx *uitt_ctx;
 	//struct uintr_sender_info *s_info;
 	struct uvecfd_ctx *uvecfd_ctx;
