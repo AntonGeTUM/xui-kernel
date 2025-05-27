@@ -551,6 +551,17 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 	printk(KERN_INFO "ctx->released = %d\n", READ_ONCE(ctx->released));
 	printk(KERN_INFO "uintr-flag = %d\n", uintr);
 	printk(KERN_INFO "UINTR target = %llu\n", ctx->uintr_target);
+
+	struct uintr_uitt_ctx *uitt_ctx = current->mm->context.uitt_ctx;
+	int idx = ctx->uintr_target;
+
+	if (uitt_ctx && idx >= 0 && idx < 256) {
+    	struct uintr_uitt_entry *entry = &uitt_ctx->uitt[idx];
+    	pr_info("UITT entry[%d]: valid=%d, user_vec=%llu, target_upid_addr=%llu\n", idx, entry->valid, entry->user_vec, entry->target_upid_addr);
+	} else {
+    	pr_info("UITT context or index invalid: uitt_ctx=%p idx=%d\n", uitt_ctx, idx);
+	}
+
 	if (likely(must_wait && !READ_ONCE(ctx->released))) {
 		// printk(KERN_INFO "Notifying\n");
 		if (!uintr) {
@@ -1341,6 +1352,15 @@ static int userfaultfd_register(struct userfaultfd_ctx *ctx,
 	} else {
 		printk(KERN_INFO "Register sender and save fd to ctx\n");
 		ctx->uintr_target = uintr_register_sender_wrapper(uffdio_register.uintr_target);
+	}
+	struct uintr_uitt_ctx *uitt_ctx = current->mm->context.uitt_ctx;
+	int idx = ctx->uintr_target;
+
+	if (uitt_ctx && idx >= 0 && idx < 256) {
+    	struct uintr_uitt_entry *entry = &uitt_ctx->uitt[idx];
+    	pr_info("UITT entry[%d]: valid=%d, user_vec=%llu, target_upid_addr=%llu\n", idx, entry->valid, entry->user_vec, entry->target_upid_addr);
+	} else {
+    	pr_info("UITT context or index invalid: uitt_ctx=%p idx=%d\n", uitt_ctx, idx);
 	}
 	
 
