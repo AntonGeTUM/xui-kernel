@@ -547,15 +547,15 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 	// likely the place to send UINTR
 	printk(KERN_INFO "must_wait = %d\n", must_wait);
 	printk(KERN_INFO "ctx->released = %d\n", READ_ONCE(ctx->released));
-
+	printk(KERN_INFO "uintr-flag = %d\n", uintr);
 	if (likely(must_wait && !READ_ONCE(ctx->released))) {
 		// printk(KERN_INFO "Notifying\n");
-		if (uintr) {
+		if (!uintr) {
 			// send UINTR hopefully
 			printk(KERN_INFO "Sending UINTR\n");
 			asm volatile("senduipi %0" :: "r"(ctx->uintr_target));
 		} else {
-			wake_up_poll(&ctx->fd_wqh, EPOLLIN);
+			//wake_up_poll(&ctx->fd_wqh, EPOLLIN);
 		}		
 		
 		schedule();
@@ -1324,6 +1324,9 @@ static int userfaultfd_register(struct userfaultfd_ctx *ctx,
 	// get uintr_fd field
 	uintr = copy_from_user(&uffdio_register.uintr_target,
 	    &user_uffdio_register->uintr_target, sizeof(__u64));
+	if (uintr != 0) {
+    	printk(KERN_ERR "copy_from_user failed, %d bytes not copied\n", uintr);
+	}
 	printk(KERN_INFO "Passing UINTR file descriptor to ctx\n");
 	ctx->uintr_target = uffdio_register.uintr_target;
 
