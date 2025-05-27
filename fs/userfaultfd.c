@@ -565,7 +565,7 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 
 	u64 val;
 
-	rdmsrl(MSR_IA32_UINTR_RR, val);
+	rdmsrl(MSR_IA32_UINTR_TT, val);
 	pr_info("UINTR_RR (UITT base) = 0x%llx\n", val);
 
 	rdmsrl(MSR_IA32_UINTR_MISC, val);

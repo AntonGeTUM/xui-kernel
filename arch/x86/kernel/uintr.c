@@ -576,7 +576,7 @@ static int do_uintr_register_sender(u64 uvec, struct uintr_upid_ctx *upid_ctx)
 
 	u64 val;
 
-	rdmsrl(MSR_IA32_UINTR_RR, val);
+	rdmsrl(MSR_IA32_UINTR_TT, val);
 	pr_info("UINTR_RR after registering handler (UITT base) = 0x%llx\n", val);
 
 	rdmsrl(MSR_IA32_UINTR_MISC, val);
@@ -770,7 +770,7 @@ SYSCALL_DEFINE1(uintr_ipi_fd, unsigned int, flags)
 SYSCALL_DEFINE2(uintr_register_sender, int, uvecfd, unsigned int, flags)
 {
 	pr_info("Syscall entry point for uintr_register_sender\n");
-	
+
 	//struct uintr_uitt_ctx *uitt_ctx;
 	//struct uintr_sender_info *s_info;
 	struct uvecfd_ctx *uvecfd_ctx;
