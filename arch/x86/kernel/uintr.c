@@ -569,8 +569,17 @@ static int do_uintr_register_sender(u64 uvec, struct uintr_upid_ctx *upid_ctx)
 	//s_info->task = get_task_struct(current);
 	//s_info->uitt_index = entry;
 
-	if (!is_uintr_sender(t))
+	if (!is_uintr_sender(t)) {
 		uintr_set_sender_msrs(t);
+	}
+
+	u64 val;
+
+	rdmsrl(MSR_IA32_UINTR_RR, val);
+	pr_info("UINTR_RR after registering handler (UITT base) = 0x%llx\n", val);
+
+	rdmsrl(MSR_IA32_UINTR_MISC, val);
+	pr_info("UINTR_MISC after registering handler = 0x%llx\n", val);
 
 	return entry;
 }
