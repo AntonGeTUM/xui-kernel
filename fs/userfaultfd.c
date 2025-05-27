@@ -1315,7 +1315,7 @@ static int userfaultfd_register(struct userfaultfd_ctx *ctx,
 	ret = -EFAULT;
 	// orig: copy_from_user(&uffdio_register, user_uffdio_register, sizeof(uffdio_register) - sizeof(__u64));
 	int size_check = sizeof(uffdio_register);
-	printf("Size of uffdio_register: %d\n", size_check);
+	printk(KERN_INFO "Size of uffdio_register: %d\n", size_check);
 	if (copy_from_user(&uffdio_register, user_uffdio_register, 24)) {
 		printk(KERN_INFO "Failed first copy_from_user\n");
 		goto out;
