@@ -32,6 +32,7 @@
 #include <linux/swapops.h>
 
 #include <asm/uintr.h>
+#include <asm/msr.h>
 
 int sysctl_unprivileged_userfaultfd __read_mostly;
 
@@ -561,6 +562,17 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 	} else {
     	pr_info("UITT context or index invalid: uitt_ctx=%p idx=%d\n", uitt_ctx, idx);
 	}
+
+	u64 val;
+
+	rdmsrl(MSR_IA32_UINTR_RR, val);
+	pr_info("UINTR_RR (UITT base) = 0x%llx\n", val);
+
+	rdmsrl(MSR_IA32_UINTR_MISC, val);
+	pr_info("UINTR_MISC = 0x%llx\n", val);
+
+	//rdmsrl(MSR_IA32_UINTR_GUEST_CTRL, val);
+	//pr_info("UINTR_GUEST_CTRL = 0x%llx\n", val);
 
 	if (likely(must_wait && !READ_ONCE(ctx->released))) {
 		// printk(KERN_INFO "Notifying\n");
