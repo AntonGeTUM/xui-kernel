@@ -600,8 +600,8 @@ int uintr_register_sender_wrapper(int uvecfd) {
 	}
 
 out_fdput:
-	pr_debug("send: register sender task=%d flags %d ret(uipi_id)=%d\n",
-		 current->pid, flags, ret);
+	pr_debug("send: register sender task=%d ret(uipi_id)=%d\n",
+		 current->pid, ret);
 
 	fdput(f);
 	return ret;
