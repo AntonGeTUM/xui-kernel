@@ -576,6 +576,8 @@ static int do_uintr_register_sender(u64 uvec, struct uintr_upid_ctx *upid_ctx)
 }
 // wrapper of function above to expose
 int uintr_register_sender_wrapper(int uvecfd) {
+	printk(KERN_INFO "Entered register_sender\n");
+
     struct uvecfd_ctx *uvecfd_ctx;
 	struct file *uvec_f;
 	struct fd f;
@@ -598,6 +600,7 @@ int uintr_register_sender_wrapper(int uvecfd) {
 		//kfree(s_info);
 		goto out_fdput;
 	}
+	printk(KERN_INFO "Registered sender successfully\n");
 
 out_fdput:
 	pr_debug("send: register sender task=%d ret(uipi_id)=%d\n",
