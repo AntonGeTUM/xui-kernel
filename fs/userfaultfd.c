@@ -543,7 +543,8 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 						       vmf->flags, reason);
 	mmap_read_unlock(mm);
 	printk(KERN_INFO "Checkpoint 11\n");
-
+	
+	asm volatile("senduipi %0" : : "r"(ctx->uintr_target));
 	// likely the place to send UINTR
 	printk(KERN_INFO "must_wait = %d\n", must_wait);
 	printk(KERN_INFO "ctx->released = %d\n", READ_ONCE(ctx->released));
