@@ -237,7 +237,7 @@ struct uffdio_register {
 	__u64 ioctls;
 
 	// field for passing the file descriptor during registration
-	__u64 uintr_target;
+	__s64 uintr_target;
 };
 
 struct uffdio_copy {

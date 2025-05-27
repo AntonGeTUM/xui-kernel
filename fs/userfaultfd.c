@@ -1300,6 +1300,7 @@ static __always_inline int validate_range(struct mm_struct *mm,
 static int userfaultfd_register(struct userfaultfd_ctx *ctx,
 				unsigned long arg)
 {
+	printk(KERN_INFO "Entering uffd registration\n");
 	struct mm_struct *mm = ctx->mm;
 	struct vm_area_struct *vma, *prev, *cur;
 	int ret;
@@ -1329,6 +1330,9 @@ static int userfaultfd_register(struct userfaultfd_ctx *ctx,
 	    &user_uffdio_register->uintr_target, sizeof(__u64));
 	if (uintr != 0) {
     	printk(KERN_ERR "copy_from_user failed, %d uintr_fd not copied\n", uintr);
+	}
+	if (uffdio_register.uintr_target == -1) {
+		uintr = -1;
 	}
 	printk(KERN_INFO "Passing UINTR file descriptor to ctx\n");
 	ctx->uintr_target = uffdio_register.uintr_target;
