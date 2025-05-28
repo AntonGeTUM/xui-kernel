@@ -391,6 +391,8 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 	int cpu_id = smp_processor_id();
 	pr_info("handle_userfault running on CPU core %d\n", cpu_id);
 	//printk(KERN_INFO "Current process name: %s\n", current->comm);
+	if (fpu_kernel_cfg.max_features & XFEATURE_MASK_UINTR)
+		pr_info("XFEATURE_UINTR is enabled in handle_userfault\n");
 
 	struct mm_struct *mm = vmf->vma->vm_mm;
 	struct userfaultfd_ctx *ctx;
@@ -1336,8 +1338,6 @@ static int userfaultfd_register(struct userfaultfd_ctx *ctx,
 	printk(KERN_INFO "Entering uffd registration\n");
 	int cpu_id = smp_processor_id();
 	pr_info("userfault_register running on CPU core %d\n", cpu_id);
-	if (fpu_kernel_cfg.max_features & XFEATURE_MASK_UINTR)
-		pr_info("XFEATURE_UINTR is enabled\n");
 
 	struct mm_struct *mm = ctx->mm;
 	struct vm_area_struct *vma, *prev, *cur;

@@ -577,10 +577,13 @@ static int do_uintr_register_sender(u64 uvec, struct uintr_upid_ctx *upid_ctx)
 	u64 val;
 
 	rdmsrl(MSR_IA32_UINTR_TT, val);
-	pr_info("UINTR_RR after registering handler (UITT base) = 0x%llx\n", val);
+	pr_info("UINTR_TT after registering handler (UITT base) = 0x%llx\n", val);
 
 	rdmsrl(MSR_IA32_UINTR_MISC, val);
 	pr_info("UINTR_MISC after registering handler = 0x%llx\n", val);
+
+	if (fpu_kernel_cfg.max_features & XFEATURE_MASK_UINTR)
+		pr_info("XFEATURE_UINTR is enabled for the sender\n");
 
 	return entry;
 }
@@ -1061,6 +1064,9 @@ static int do_uintr_register_handler(u64 handler, unsigned int flags)
 
 	pr_debug("recv: task=%d register handler=%llx upid %px flags=%d\n",
 		 t->pid, handler, upid, flags);
+
+	if (fpu_kernel_cfg.max_features & XFEATURE_MASK_UINTR)
+		pr_info("XFEATURE_UINTR is enabled for the receiver\n");
 
 	return 0;
 }
