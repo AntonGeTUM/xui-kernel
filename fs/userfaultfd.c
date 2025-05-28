@@ -33,6 +33,7 @@
 
 #include <asm/uintr.h>
 #include <asm/msr.h>
+#include <linux/smp.h>
 
 int sysctl_unprivileged_userfaultfd __read_mostly;
 
@@ -385,7 +386,10 @@ static inline unsigned int userfaultfd_get_blocking_state(unsigned int flags)
 vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 {
 	printk(KERN_INFO "Entered handle_userfault\n");
-	printk(KERN_INFO "Current process name: %s\n", current->comm);
+	int cpu_id = smp_processor_id();
+	pr_info("handle_userfault running on CPU core %d\n", cpu_id);
+	//printk(KERN_INFO "Current process name: %s\n", current->comm);
+
 	struct mm_struct *mm = vmf->vma->vm_mm;
 	struct userfaultfd_ctx *ctx;
 	struct userfaultfd_wait_queue uwq;
@@ -1328,6 +1332,9 @@ static int userfaultfd_register(struct userfaultfd_ctx *ctx,
 				unsigned long arg)
 {
 	printk(KERN_INFO "Entering uffd registration\n");
+	int cpu_id = smp_processor_id();
+	pr_info("userfault_register running on CPU core %d\n", cpu_id);
+
 	struct mm_struct *mm = ctx->mm;
 	struct vm_area_struct *vma, *prev, *cur;
 	int ret;
