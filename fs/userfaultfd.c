@@ -1336,7 +1336,7 @@ static int userfaultfd_register(struct userfaultfd_ctx *ctx,
 	printk(KERN_INFO "Entering uffd registration\n");
 	int cpu_id = smp_processor_id();
 	pr_info("userfault_register running on CPU core %d\n", cpu_id);
-	if (fpu_kernel_cfg.xfeatures & XFEATURE_MASK_UINTR)
+	if (fpu_kernel_cfg.max_features & XFEATURE_MASK_UINTR)
 		pr_info("XFEATURE_UINTR is enabled\n");
 
 	struct mm_struct *mm = ctx->mm;
