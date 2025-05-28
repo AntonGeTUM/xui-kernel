@@ -34,6 +34,7 @@
 #include <asm/uintr.h>
 #include <asm/msr.h>
 #include <linux/smp.h>
+#include <asm/fpu/api.h>
 
 int sysctl_unprivileged_userfaultfd __read_mostly;
 
