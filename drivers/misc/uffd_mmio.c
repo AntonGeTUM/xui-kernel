@@ -8,11 +8,6 @@
 
 #define UFFD_MMIO_SIZE 0x1000
 
-struct uffd_mmio_dev {
-    void __iomem *regs;
-    struct resource *res;
-};
-
 struct mmio_dev *global_uffd_mmio_dev;
 EXPORT_SYMBOL_GPL(global_uffd_mmio_dev);
 
@@ -29,9 +24,9 @@ static int uffd_mmio_probe(struct platform_device *pdev)
     if (!res)
         return -ENODEV;
 
-    dev->regs = devm_ioremap_resource(&pdev->dev, res);
-    if (IS_ERR(dev->regs))
-        return PTR_ERR(dev->regs);
+    dev->mmio_base = devm_ioremap_resource(&pdev->dev, res);
+    if (IS_ERR(dev->mmio_base))
+        return PTR_ERR(dev->mmio_base);
 
     platform_set_drvdata(pdev, dev);
 
