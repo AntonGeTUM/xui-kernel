@@ -37,6 +37,8 @@
 #include <asm/fpu/api.h>
 #include <asm/fpu/xstate.h>
 
+#include <linux/io.h>
+
 int sysctl_unprivileged_userfaultfd __read_mostly;
 
 static struct kmem_cache *userfaultfd_ctx_cachep __read_mostly;
@@ -2134,7 +2136,7 @@ SYSCALL_DEFINE1(userfaultfd, int, flags)
 	ctx->mm = current->mm;
 	/* prevent the mm struct to be freed */
 	mmgrab(ctx->mm);
-	ctx->dev = my_uffd_dev_instance; 
+	ctx->dev = global_uffd_mmio_dev; 
 
 	fd = anon_inode_getfd_secure("[userfaultfd]", &userfaultfd_fops, ctx,
 			O_RDWR | (flags & UFFD_SHARED_FCNTL_FLAGS), NULL);
