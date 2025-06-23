@@ -415,20 +415,20 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 	if (current->flags & (PF_EXITING|PF_DUMPCORE))
 		goto out;
 
-	printk(KERN_INFO "Checkpoint 1\n");
+	//printk(KERN_INFO "Checkpoint 1\n");
 	/*
 	 * Coredumping runs without mmap_lock so we can only check that
 	 * the mmap_lock is held, if PF_DUMPCORE was not set.
 	 */
 	mmap_assert_locked(mm);
-	printk(KERN_INFO "Checkpoint 2\n");
+	//printk(KERN_INFO "Checkpoint 2\n");
 
 	ctx = vmf->vma->vm_userfaultfd_ctx.ctx;
 	if (!ctx)
 		goto out;
 
 	BUG_ON(ctx->mm != mm);
-	printk(KERN_INFO "Checkpoint 3\n");
+	//printk(KERN_INFO "Checkpoint 3\n");
 
 	/* Any unrecognized flag is a bug. */
 	VM_BUG_ON(reason & ~__VM_UFFD_FLAGS);
@@ -444,7 +444,7 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 			"without obtaining CAP_SYS_PTRACE capability\n");
 		goto out;
 	}
-	printk(KERN_INFO "Checkpoint 4\n");
+	//printk(KERN_INFO "Checkpoint 4\n");
 	/*
 	 * If it's already released don't get it. This avoids to loop
 	 * in __get_user_pages if userfaultfd_release waits on the
@@ -471,7 +471,7 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 		goto out;
 	}
 
-	printk(KERN_INFO "Checkpoint 5\n");
+	//printk(KERN_INFO "Checkpoint 5\n");
 	/*
 	 * Check that we can return VM_FAULT_RETRY.
 	 *
@@ -500,7 +500,7 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 		goto out;
 	}
 
-	printk(KERN_INFO "Checkpoint 6\n");
+	//printk(KERN_INFO "Checkpoint 6\n");
 	/*
 	 * Handle nowait, not much to do other than tell it to retry
 	 * and wait.
@@ -509,7 +509,7 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 	if (vmf->flags & FAULT_FLAG_RETRY_NOWAIT)
 		goto out;
 
-	printk(KERN_INFO "Checkpoint 7\n");
+	//printk(KERN_INFO "Checkpoint 7\n");
 	/* take the reference before dropping the mmap_lock */
 	userfaultfd_ctx_get(ctx);
 
@@ -518,7 +518,7 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 	uwq.msg = userfault_msg(vmf->address, vmf->real_address, vmf->flags,
 				reason, ctx->features);
 
-	printk(KERN_INFO "Checkpoint 8\n");
+	//printk(KERN_INFO "Checkpoint 8\n");
 	printk(KERN_INFO "uffd_msg.event = %u\n", uwq.msg.event);
 	printk(KERN_INFO "uffd_msg.pagefault.flags = 0x%llx\n", uwq.msg.arg.pagefault.flags);
 	printk(KERN_INFO "uffd_msg.pagefault.address = 0x%llx\n", uwq.msg.arg.pagefault.address);
@@ -530,7 +530,7 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 	blocking_state = userfaultfd_get_blocking_state(vmf->flags);
 
 	spin_lock_irq(&ctx->fault_pending_wqh.lock);
-	printk(KERN_INFO "Checkpoint 9\n");
+	//printk(KERN_INFO "Checkpoint 9\n");
 	/*
 	 * After the __add_wait_queue the uwq is visible to userland
 	 * through poll/read().
@@ -543,7 +543,7 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 	 */
 	set_current_state(blocking_state);
 	spin_unlock_irq(&ctx->fault_pending_wqh.lock);
-	printk(KERN_INFO "Checkpoint 10\n");
+	//printk(KERN_INFO "Checkpoint 10\n");
 
 	if (!is_vm_hugetlb_page(vmf->vma))
 		must_wait = userfaultfd_must_wait(ctx, vmf->address, vmf->flags,
@@ -553,22 +553,22 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 						       vmf->address,
 						       vmf->flags, reason);
 	mmap_read_unlock(mm);
-	printk(KERN_INFO "Checkpoint 11\n");
+	//printk(KERN_INFO "Checkpoint 11\n");
 
 	// likely the place to send UINTR
-	printk(KERN_INFO "must_wait = %d\n", must_wait);
-	printk(KERN_INFO "ctx->released = %d\n", READ_ONCE(ctx->released));
-	printk(KERN_INFO "uintr-flag = %d\n", uintr);
-	printk(KERN_INFO "UINTR target = %llu\n", ctx->uintr_target);
+	//printk(KERN_INFO "must_wait = %d\n", must_wait);
+	//printk(KERN_INFO "ctx->released = %d\n", READ_ONCE(ctx->released));
+	//printk(KERN_INFO "uintr-flag = %d\n", uintr);
+	//printk(KERN_INFO "UINTR target = %llu\n", ctx->uintr_target);
 
 	struct uintr_uitt_ctx *uitt_ctx = current->mm->context.uitt_ctx;
 	int idx = ctx->uintr_target;
 
 	if (uitt_ctx && idx >= 0 && idx < 256) {
     	struct uintr_uitt_entry *entry = &uitt_ctx->uitt[idx];
-    	pr_info("UITT entry[%d]: valid=%d, user_vec=%llu, target_upid_addr=%llu\n", idx, entry->valid, entry->user_vec, entry->target_upid_addr);
+    	//pr_info("UITT entry[%d]: valid=%d, user_vec=%llu, target_upid_addr=%llu\n", idx, entry->valid, entry->user_vec, entry->target_upid_addr);
 	} else {
-    	pr_info("UITT context or index invalid: uitt_ctx=%p idx=%d\n", uitt_ctx, idx);
+    	//pr_info("UITT context or index invalid: uitt_ctx=%p idx=%d\n", uitt_ctx, idx);
 	}
 
 	u64 val;
@@ -586,16 +586,16 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 		// printk(KERN_INFO "Notifying\n");
 		if (!uintr) {
 			// send UINTR hopefully
-			printk(KERN_INFO "Sending UINTR\n");
+			//printk(KERN_INFO "Sending UINTR\n");
 			asm volatile("senduipi %0" : : "r"(ctx->uintr_target));
 		} else {
 			wake_up_poll(&ctx->fd_wqh, EPOLLIN);
 		}		
-		printk(KERN_INFO "we're past senduipi\n");
+		//printk(KERN_INFO "we're past senduipi\n");
 		schedule();
-		printk(KERN_INFO "we're past schedule()\n");
+		//printk(KERN_INFO "we're past schedule()\n");
 	}
-	printk(KERN_INFO "Checkpoint 12\n");
+	//printk(KERN_INFO "Checkpoint 12\n");
 	__set_current_state(TASK_RUNNING);
 
 	/*
@@ -621,13 +621,13 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 		list_del(&uwq.wq.entry);
 		spin_unlock_irq(&ctx->fault_pending_wqh.lock);
 	}
-	printk(KERN_INFO "Checkpoint 13\n");
+	//printk(KERN_INFO "Checkpoint 13\n");
 	/*
 	 * ctx may go away after this if the userfault pseudo fd is
 	 * already released.
 	 */
 	userfaultfd_ctx_put(ctx);
-	printk(KERN_INFO "Checkpoint 14\n");
+	//printk(KERN_INFO "Checkpoint 14\n");
 out:
 	return ret;
 }
