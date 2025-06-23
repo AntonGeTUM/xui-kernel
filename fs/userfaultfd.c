@@ -40,6 +40,15 @@
 #include <linux/io.h>
 #include <linux/uffd_mmio.h>
 
+#ifndef iowrite64
+static inline void iowrite64(u64 val, void __iomem *addr)
+{
+    /* fallback: split 64-bit into two 32-bit writes (assuming little endian) */
+    iowrite32((u32)val, addr);
+    iowrite32((u32)(val >> 32), addr + 4);
+}
+#endif
+
 int sysctl_unprivileged_userfaultfd __read_mostly;
 
 static struct kmem_cache *userfaultfd_ctx_cachep __read_mostly;
