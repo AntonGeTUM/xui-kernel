@@ -38,14 +38,11 @@
 #include <asm/fpu/xstate.h>
 
 #include <linux/io.h>
+#include <linux/uffd_mmio.h>
 
 int sysctl_unprivileged_userfaultfd __read_mostly;
 
 static struct kmem_cache *userfaultfd_ctx_cachep __read_mostly;
-
-struct mmio_dev {
-    void __iomem *mmio_base;
-};
 
 extern struct mmio_dev *global_uffd_mmio_dev;
 

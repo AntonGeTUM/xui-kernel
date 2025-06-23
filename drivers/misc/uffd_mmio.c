@@ -4,6 +4,8 @@
 #include <linux/io.h>
 #include <linux/of_device.h>
 
+#include <linux/uffd_mmio.h>
+
 #define UFFD_MMIO_SIZE 0x1000
 
 struct uffd_mmio_dev {
