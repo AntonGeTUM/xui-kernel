@@ -41,6 +41,12 @@ int sysctl_unprivileged_userfaultfd __read_mostly;
 
 static struct kmem_cache *userfaultfd_ctx_cachep __read_mostly;
 
+struct mmio_dev {
+    void __iomem *mmio_base;
+};
+
+extern struct mmio_dev *global_uffd_mmio_dev;
+
 /*
  * Start with fault_pending_wqh and fault_wqh so they're more likely
  * to be in the same cacheline.
@@ -79,8 +85,7 @@ struct userfaultfd_ctx {
 	/* mm with one ore more vmas attached to this userfaultfd_ctx */
 	struct mm_struct *mm;
 
-	// file descriptor for UINTR
-	__u64 uintr_target;
+	struct mmio_dev *dev;
 };
 
 // flag
@@ -388,12 +393,6 @@ static inline unsigned int userfaultfd_get_blocking_state(unsigned int flags)
 vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 {
 	printk(KERN_INFO "Entered handle_userfault\n");
-	int cpu_id = smp_processor_id();
-	pr_info("handle_userfault running on CPU core %d\n", cpu_id);
-	//printk(KERN_INFO "Current process name: %s\n", current->comm);
-	if (fpu_kernel_cfg.max_features & XFEATURE_MASK_UINTR)
-		pr_info("XFEATURE_UINTR is enabled in handle_userfault\n");
-
 	struct mm_struct *mm = vmf->vma->vm_mm;
 	struct userfaultfd_ctx *ctx;
 	struct userfaultfd_wait_queue uwq;
@@ -415,20 +414,17 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 	if (current->flags & (PF_EXITING|PF_DUMPCORE))
 		goto out;
 
-	//printk(KERN_INFO "Checkpoint 1\n");
 	/*
 	 * Coredumping runs without mmap_lock so we can only check that
 	 * the mmap_lock is held, if PF_DUMPCORE was not set.
 	 */
 	mmap_assert_locked(mm);
-	//printk(KERN_INFO "Checkpoint 2\n");
 
 	ctx = vmf->vma->vm_userfaultfd_ctx.ctx;
 	if (!ctx)
 		goto out;
 
 	BUG_ON(ctx->mm != mm);
-	//printk(KERN_INFO "Checkpoint 3\n");
 
 	/* Any unrecognized flag is a bug. */
 	VM_BUG_ON(reason & ~__VM_UFFD_FLAGS);
@@ -444,7 +440,7 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 			"without obtaining CAP_SYS_PTRACE capability\n");
 		goto out;
 	}
-	//printk(KERN_INFO "Checkpoint 4\n");
+
 	/*
 	 * If it's already released don't get it. This avoids to loop
 	 * in __get_user_pages if userfaultfd_release waits on the
@@ -471,7 +467,6 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 		goto out;
 	}
 
-	//printk(KERN_INFO "Checkpoint 5\n");
 	/*
 	 * Check that we can return VM_FAULT_RETRY.
 	 *
@@ -500,7 +495,6 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 		goto out;
 	}
 
-	//printk(KERN_INFO "Checkpoint 6\n");
 	/*
 	 * Handle nowait, not much to do other than tell it to retry
 	 * and wait.
@@ -509,7 +503,6 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 	if (vmf->flags & FAULT_FLAG_RETRY_NOWAIT)
 		goto out;
 
-	//printk(KERN_INFO "Checkpoint 7\n");
 	/* take the reference before dropping the mmap_lock */
 	userfaultfd_ctx_get(ctx);
 
@@ -518,7 +511,6 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 	uwq.msg = userfault_msg(vmf->address, vmf->real_address, vmf->flags,
 				reason, ctx->features);
 
-	//printk(KERN_INFO "Checkpoint 8\n");
 	printk(KERN_INFO "uffd_msg.event = %u\n", uwq.msg.event);
 	printk(KERN_INFO "uffd_msg.pagefault.flags = 0x%llx\n", uwq.msg.arg.pagefault.flags);
 	printk(KERN_INFO "uffd_msg.pagefault.address = 0x%llx\n", uwq.msg.arg.pagefault.address);
@@ -530,7 +522,6 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 	blocking_state = userfaultfd_get_blocking_state(vmf->flags);
 
 	spin_lock_irq(&ctx->fault_pending_wqh.lock);
-	//printk(KERN_INFO "Checkpoint 9\n");
 	/*
 	 * After the __add_wait_queue the uwq is visible to userland
 	 * through poll/read().
@@ -543,7 +534,6 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 	 */
 	set_current_state(blocking_state);
 	spin_unlock_irq(&ctx->fault_pending_wqh.lock);
-	//printk(KERN_INFO "Checkpoint 10\n");
 
 	if (!is_vm_hugetlb_page(vmf->vma))
 		must_wait = userfaultfd_must_wait(ctx, vmf->address, vmf->flags,
@@ -553,49 +543,12 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 						       vmf->address,
 						       vmf->flags, reason);
 	mmap_read_unlock(mm);
-	//printk(KERN_INFO "Checkpoint 11\n");
-
-	// likely the place to send UINTR
-	//printk(KERN_INFO "must_wait = %d\n", must_wait);
-	//printk(KERN_INFO "ctx->released = %d\n", READ_ONCE(ctx->released));
-	//printk(KERN_INFO "uintr-flag = %d\n", uintr);
-	//printk(KERN_INFO "UINTR target = %llu\n", ctx->uintr_target);
-
-	struct uintr_uitt_ctx *uitt_ctx = current->mm->context.uitt_ctx;
-	int idx = ctx->uintr_target;
-
-	if (uitt_ctx && idx >= 0 && idx < 256) {
-    	struct uintr_uitt_entry *entry = &uitt_ctx->uitt[idx];
-    	//pr_info("UITT entry[%d]: valid=%d, user_vec=%llu, target_upid_addr=%llu\n", idx, entry->valid, entry->user_vec, entry->target_upid_addr);
-	} else {
-    	//pr_info("UITT context or index invalid: uitt_ctx=%p idx=%d\n", uitt_ctx, idx);
-	}
-
-	u64 val;
-
-	rdmsrl(MSR_IA32_UINTR_TT, val);
-	pr_info("UINTR_RR (UITT base) = 0x%llx\n", val);
-
-	rdmsrl(MSR_IA32_UINTR_MISC, val);
-	pr_info("UINTR_MISC = 0x%llx\n", val);
-
-	//rdmsrl(MSR_IA32_UINTR_GUEST_CTRL, val);
-	//pr_info("UINTR_GUEST_CTRL = 0x%llx\n", val);
 
 	if (likely(must_wait && !READ_ONCE(ctx->released))) {
-		// printk(KERN_INFO "Notifying\n");
-		if (!uintr) {
-			// send UINTR hopefully
-			//printk(KERN_INFO "Sending UINTR\n");
-			asm volatile("senduipi %0" : : "r"(ctx->uintr_target));
-		} else {
-			wake_up_poll(&ctx->fd_wqh, EPOLLIN);
-		}		
-		//printk(KERN_INFO "we're past senduipi\n");
+		wake_up_poll(&ctx->fd_wqh, EPOLLIN);
 		schedule();
-		//printk(KERN_INFO "we're past schedule()\n");
 	}
-	//printk(KERN_INFO "Checkpoint 12\n");
+
 	__set_current_state(TASK_RUNNING);
 
 	/*
@@ -617,17 +570,16 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 		 * No need of list_del_init(), the uwq on the stack
 		 * will be freed shortly anyway.
 		 */
-		printk(KERN_INFO "About to remove queue entry\n");
 		list_del(&uwq.wq.entry);
 		spin_unlock_irq(&ctx->fault_pending_wqh.lock);
 	}
-	//printk(KERN_INFO "Checkpoint 13\n");
+
 	/*
 	 * ctx may go away after this if the userfault pseudo fd is
 	 * already released.
 	 */
 	userfaultfd_ctx_put(ctx);
-	//printk(KERN_INFO "Checkpoint 14\n");
+
 out:
 	return ret;
 }
@@ -1336,9 +1288,6 @@ static int userfaultfd_register(struct userfaultfd_ctx *ctx,
 				unsigned long arg)
 {
 	printk(KERN_INFO "Entering uffd registration\n");
-	int cpu_id = smp_processor_id();
-	pr_info("userfault_register running on CPU core %d\n", cpu_id);
-
 	struct mm_struct *mm = ctx->mm;
 	struct vm_area_struct *vma, *prev, *cur;
 	int ret;
@@ -1352,40 +1301,9 @@ static int userfaultfd_register(struct userfaultfd_ctx *ctx,
 	user_uffdio_register = (struct uffdio_register __user *) arg;
 
 	ret = -EFAULT;
-	// orig: copy_from_user(&uffdio_register, user_uffdio_register, sizeof(uffdio_register) - sizeof(__u64));
-	int size_check = sizeof(uffdio_register);
-	printk(KERN_INFO "Size of uffdio_register: %d\n", size_check);
-	if (copy_from_user(&uffdio_register, user_uffdio_register, 24)) {
-		printk(KERN_INFO "Failed first copy_from_user\n");
+	if (copy_from_user(&uffdio_register, user_uffdio_register,
+			   sizeof(uffdio_register)-sizeof(__u64)))
 		goto out;
-	}
-		
-
-	// default case
-	uffdio_register.uintr_target = 0;
-	// get uintr_fd field
-	uintr = copy_from_user(&uffdio_register.uintr_target,
-	    &user_uffdio_register->uintr_target, sizeof(__u64));
-	if (uintr != 0) {
-    	printk(KERN_ERR "copy_from_user failed, %d uintr_fd not copied\n", uintr);
-	}
-	if (uffdio_register.uintr_target == -1) {
-		uintr = -1;
-		ctx->uintr_target = uffdio_register.uintr_target;
-	} else {
-		printk(KERN_INFO "Register sender and save fd to ctx\n");
-		ctx->uintr_target = uintr_register_sender_wrapper(uffdio_register.uintr_target);
-	}
-	struct uintr_uitt_ctx *uitt_ctx = current->mm->context.uitt_ctx;
-	int idx = ctx->uintr_target;
-
-	if (uitt_ctx && idx >= 0 && idx < 256) {
-    	struct uintr_uitt_entry *entry = &uitt_ctx->uitt[idx];
-    	pr_info("UITT entry[%d]: valid=%d, user_vec=%llu, target_upid_addr=%llu\n", idx, entry->valid, entry->user_vec, entry->target_upid_addr);
-	} else {
-    	pr_info("UITT context or index invalid: uitt_ctx=%p idx=%d\n", uitt_ctx, idx);
-	}
-	
 
 	ret = -EINVAL;
 	if (!uffdio_register.mode)
@@ -1410,11 +1328,8 @@ static int userfaultfd_register(struct userfaultfd_ctx *ctx,
 
 	ret = validate_range(mm, uffdio_register.range.start,
 			     uffdio_register.range.len);
-	if (ret) {
-		printk(KERN_INFO "Invalid memory range\n");
+	if (ret)
 		goto out;
-	}
-		
 
 	start = uffdio_register.range.start;
 	end = start + uffdio_register.range.len;
@@ -1597,6 +1512,23 @@ out_unlock:
 		 */
 		if (put_user(ioctls_out, &user_uffdio_register->ioctls))
 			ret = -EFAULT;
+
+		if (!ret) {
+			if (!global_uffd_mmio_dev || !global_uffd_mmio_dev->mmio_base) {
+				printk(KERN_ERR "uffd: MMIO device not initialized\n");
+				ret = -ENODEV;
+				goto out;
+			}
+
+			iowrite64(uffdio_register.range.start,
+				  global_uffd_mmio_dev->mmio_base + 0);
+			iowrite64(uffdio_register.range.start + uffdio_register.range.len,
+				  global_uffd_mmio_dev->mmio_base + 8);
+
+			printk(KERN_INFO "uffd: MMIO passed range start=0x%llx end=0x%llx\n",
+			       (unsigned long long)uffdio_register.range.start,
+			       (unsigned long long)(uffdio_register.range.start + uffdio_register.range.len));
+		}
 	}
 out:
 	return ret;
@@ -2202,6 +2134,7 @@ SYSCALL_DEFINE1(userfaultfd, int, flags)
 	ctx->mm = current->mm;
 	/* prevent the mm struct to be freed */
 	mmgrab(ctx->mm);
+	ctx->dev = my_uffd_dev_instance; 
 
 	fd = anon_inode_getfd_secure("[userfaultfd]", &userfaultfd_fops, ctx,
 			O_RDWR | (flags & UFFD_SHARED_FCNTL_FLAGS), NULL);

@@ -11,9 +11,12 @@ struct uffd_mmio_dev {
     struct resource *res;
 };
 
+struct mmio_dev *global_uffd_mmio_dev;
+EXPORT_SYMBOL_GPL(global_uffd_mmio_dev);
+
 static int uffd_mmio_probe(struct platform_device *pdev)
 {
-    struct uffd_mmio_dev *dev;
+    struct mmio_dev *dev;
     struct resource *res;
 
     dev = devm_kzalloc(&pdev->dev, sizeof(*dev), GFP_KERNEL);
@@ -29,6 +32,8 @@ static int uffd_mmio_probe(struct platform_device *pdev)
         return PTR_ERR(dev->regs);
 
     platform_set_drvdata(pdev, dev);
+
+    global_uffd_mmio_dev = dev;
 
     pr_info("uffd_mmio: probed at %pa\n", &res->start);
     return 0;
