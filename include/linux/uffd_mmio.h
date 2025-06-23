@@ -2,7 +2,7 @@
 #define _UFFD_MMIO_H
 
 struct mmio_dev {
-    void __iomem *regs;
+    void __iomem *mmio_base;
     // add other members here as needed
 };
 
