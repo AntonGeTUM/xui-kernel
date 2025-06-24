@@ -2157,6 +2157,8 @@ SYSCALL_DEFINE1(userfaultfd, int, flags)
 		kmem_cache_free(userfaultfd_ctx_cachep, ctx);
 	}
 	printk(KERN_INFO "Returning file descriptor %d\n", fd);
+	printk(KERN_INFO "userfaultfd ctx=%p mm=%p refcount=%d flags=0x%x features=0x%x released=%d dev=%p\n",
+        ctx, ctx->mm, refcount_read(&ctx->refcount), ctx->flags, ctx->features, ctx->released, ctx->dev);
 	return fd;
 }
 
