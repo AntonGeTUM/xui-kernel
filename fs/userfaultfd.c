@@ -2107,6 +2107,7 @@ static void init_once_userfaultfd_ctx(void *mem)
 
 SYSCALL_DEFINE1(userfaultfd, int, flags)
 {
+	printk(KERN_INFO "Entered syscall userfaultfd\n");
 	struct userfaultfd_ctx *ctx;
 	int fd;
 
@@ -2141,7 +2142,8 @@ SYSCALL_DEFINE1(userfaultfd, int, flags)
 	ctx->mm = current->mm;
 	/* prevent the mm struct to be freed */
 	mmgrab(ctx->mm);
-	ctx->dev = global_uffd_mmio_dev; 
+	printk(KERN_INFO "Setting the MMIO device\n");
+	ctx->dev = global_uffd_mmio_dev;
 
 	fd = anon_inode_getfd_secure("[userfaultfd]", &userfaultfd_fops, ctx,
 			O_RDWR | (flags & UFFD_SHARED_FCNTL_FLAGS), NULL);
@@ -2149,6 +2151,7 @@ SYSCALL_DEFINE1(userfaultfd, int, flags)
 		mmdrop(ctx->mm);
 		kmem_cache_free(userfaultfd_ctx_cachep, ctx);
 	}
+	printk(KERN_INFO "Returning file descriptor %d\n", fd);
 	return fd;
 }
 
