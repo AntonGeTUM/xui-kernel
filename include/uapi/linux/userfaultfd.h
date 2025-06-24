@@ -235,9 +235,6 @@ struct uffdio_register {
 	 * range, keep at the end as the last 8 bytes aren't read.
 	 */
 	__u64 ioctls;
-
-	// field for passing the file descriptor during registration
-	__s64 uintr_target;
 };
 
 struct uffdio_copy {
