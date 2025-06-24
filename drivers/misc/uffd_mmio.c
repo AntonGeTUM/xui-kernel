@@ -6,7 +6,7 @@
 
 #include <linux/uffd_mmio.h>
 
-#define UFFD_MMIO_SIZE 0x1000
+#define UFFD_MMIO_SIZE 0x10
 
 struct mmio_dev *global_uffd_mmio_dev;
 EXPORT_SYMBOL_GPL(global_uffd_mmio_dev);

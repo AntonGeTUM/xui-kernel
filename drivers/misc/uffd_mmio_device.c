@@ -3,7 +3,7 @@
 #include <linux/platform_device.h>
 #include <linux/ioport.h>
 
-#define UFFD_MMIO_ADDR 0x500000000ULL
+#define UFFD_MMIO_ADDR 0xc0100000ULL
 #define UFFD_MMIO_SIZE 0x10
 
 static struct resource uffd_mmio_res[] = {
