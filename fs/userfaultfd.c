@@ -2021,6 +2021,7 @@ static long userfaultfd_ioctl(struct file *file, unsigned cmd,
 			      unsigned long arg)
 {
 	printk(KERN_INFO "Entered ioctl with cmd=%u\n", cmd);
+	printk(KERN_INFO "Kernel compiled UFFDIO_REGISTER = 0x%x\n", UFFDIO_REGISTER);
 	int ret = -EINVAL;
 	struct userfaultfd_ctx *ctx = file->private_data;
 
