@@ -2022,8 +2022,10 @@ static long userfaultfd_ioctl(struct file *file, unsigned cmd,
 	int ret = -EINVAL;
 	struct userfaultfd_ctx *ctx = file->private_data;
 
-	if (cmd != UFFDIO_API && !userfaultfd_is_initialized(ctx))
+	if (cmd != UFFDIO_API && !userfaultfd_is_initialized(ctx)) {
+		printk(KERN_ERR "UFFD ctx uninitialized or invalid\n");
 		return -EINVAL;
+	}
 
 	switch(cmd) {
 	case UFFDIO_API:
