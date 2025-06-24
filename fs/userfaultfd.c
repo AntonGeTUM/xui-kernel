@@ -1969,6 +1969,7 @@ static inline unsigned int uffd_ctx_features(__u64 user_features)
 static int userfaultfd_api(struct userfaultfd_ctx *ctx,
 			   unsigned long arg)
 {
+	printk(KERN_INFO "Entered userfaultfd_api\n");
 	struct uffdio_api uffdio_api;
 	void __user *buf = (void __user *)arg;
 	unsigned int ctx_features;
@@ -2019,11 +2020,12 @@ err_out:
 static long userfaultfd_ioctl(struct file *file, unsigned cmd,
 			      unsigned long arg)
 {
+	printk(KERN_INFO "Entered ioctl with cmd %u\n", cmd);
 	int ret = -EINVAL;
 	struct userfaultfd_ctx *ctx = file->private_data;
 
 	if (cmd != UFFDIO_API && !userfaultfd_is_initialized(ctx)) {
-		printk(KERN_ERR "UFFD ctx uninitialized or invalid\n");
+		printk(KERN_INFO "UFFD ctx uninitialized or invalid\n");
 		return -EINVAL;
 	}
 
