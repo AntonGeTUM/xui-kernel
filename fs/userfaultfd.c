@@ -2032,6 +2032,7 @@ static long userfaultfd_ioctl(struct file *file, unsigned cmd,
 		ret = userfaultfd_api(ctx, arg);
 		break;
 	case UFFDIO_REGISTER:
+		printk(KERN_INFO "IOCTL UFFDIO_REGISTER\n");
 		ret = userfaultfd_register(ctx, arg);
 		break;
 	case UFFDIO_UNREGISTER:
