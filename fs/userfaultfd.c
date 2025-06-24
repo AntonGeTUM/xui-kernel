@@ -2032,10 +2032,12 @@ static long userfaultfd_ioctl(struct file *file, unsigned cmd,
 	switch(cmd) {
 	case UFFDIO_API:
 		ret = userfaultfd_api(ctx, arg);
+		printk(KERN_INFO "Returned from API with ret=%d\n", ret);
 		break;
 	case UFFDIO_REGISTER:
 		printk(KERN_INFO "IOCTL UFFDIO_REGISTER\n");
 		ret = userfaultfd_register(ctx, arg);
+		printk(KERN_INFO "Returned from register with ret=%d\n", ret);
 		break;
 	case UFFDIO_UNREGISTER:
 		ret = userfaultfd_unregister(ctx, arg);
