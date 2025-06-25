@@ -10,7 +10,7 @@ static struct resource uffd_mmio_res[] = {
     {
         .start = UFFD_MMIO_ADDR,
         .end = UFFD_MMIO_ADDR + UFFD_MMIO_SIZE - 1,
-        .flags = IORESOURCE_MEM,
+        .flags = IORESOURCE_MEM, // mark as mmio
     },
 };
 
@@ -23,7 +23,7 @@ static struct platform_device uffd_mmio_dev = {
 
 static int __init uffd_mmio_dev_init(void)
 {
-    return platform_device_register(&uffd_mmio_dev);
+    return platform_device_register(&uffd_mmio_dev); // call probe()
 }
 
 static void __exit uffd_mmio_dev_exit(void)

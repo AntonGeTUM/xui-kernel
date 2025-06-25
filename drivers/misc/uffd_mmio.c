@@ -18,14 +18,14 @@ static int uffd_mmio_probe(struct platform_device *pdev)
 
     dev = devm_kzalloc(&pdev->dev, sizeof(*dev), GFP_KERNEL);
     if (!dev)
-        return -ENOMEM;
+        return -ENOMEM; // out of memory for struct
 
     res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
     if (!res)
-        return -ENODEV;
+        return -ENODEV; // no physical memory for device
 
     dev->mmio_base = devm_ioremap_resource(&pdev->dev, res);
-    if (IS_ERR(dev->mmio_base))
+    if (IS_ERR(dev->mmio_base)) // could not map to virtual address space
         return PTR_ERR(dev->mmio_base);
 
     platform_set_drvdata(pdev, dev);
@@ -38,6 +38,7 @@ static int uffd_mmio_probe(struct platform_device *pdev)
 
 static int uffd_mmio_remove(struct platform_device *pdev)
 {
+    // don't expect to actually remove device
     pr_info("uffd_mmio: removed\n");
     return 0;
 }
