@@ -23,4 +23,13 @@
 #define UINTR_HANDLER_FLAG_WAITING_ANY		(UINTR_HANDLER_FLAG_WAITING_SENDER | \
 						 UINTR_HANDLER_FLAG_WAITING_RECEIVER)
 
+struct uintr_frame_extended {
+    __u64 rip;
+    __u64 rflags;
+    __u64 rsp;
+
+    __u64 fault_address;
+    __u64 error_code;
+};
+
 #endif
