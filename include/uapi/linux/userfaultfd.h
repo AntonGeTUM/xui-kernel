@@ -126,7 +126,7 @@ struct uffd_msg {
 			__u64	reserved3;
 		} reserved;
 	} arg;
-} __packed;
+} __attribute__((packed));
 
 /*
  * Start at 0x12 and not at 0 to be more strict against bugs.
