@@ -399,7 +399,7 @@ static inline unsigned int userfaultfd_get_blocking_state(unsigned int flags)
  */
 vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 {
-	printk(KERN_INFO "Entered handle_userfault\n");
+	//printk(KERN_INFO "Entered handle_userfault\n");
 	struct mm_struct *mm = vmf->vma->vm_mm;
 	struct userfaultfd_ctx *ctx;
 	struct userfaultfd_wait_queue uwq;
@@ -518,10 +518,10 @@ vm_fault_t handle_userfault(struct vm_fault *vmf, unsigned long reason)
 	uwq.msg = userfault_msg(vmf->address, vmf->real_address, vmf->flags,
 				reason, ctx->features);
 
-	printk(KERN_INFO "uffd_msg.event = %u\n", uwq.msg.event);
-	printk(KERN_INFO "uffd_msg.pagefault.flags = 0x%llx\n", uwq.msg.arg.pagefault.flags);
-	printk(KERN_INFO "uffd_msg.pagefault.address = 0x%llx\n", uwq.msg.arg.pagefault.address);
-	printk(KERN_INFO "uffd_msg.pagefault.ptid = %u\n", uwq.msg.arg.pagefault.feat.ptid);
+	//printk(KERN_INFO "uffd_msg.event = %u\n", uwq.msg.event);
+	//printk(KERN_INFO "uffd_msg.pagefault.flags = 0x%llx\n", uwq.msg.arg.pagefault.flags);
+	//printk(KERN_INFO "uffd_msg.pagefault.address = 0x%llx\n", uwq.msg.arg.pagefault.address);
+	//printk(KERN_INFO "uffd_msg.pagefault.ptid = %u\n", uwq.msg.arg.pagefault.feat.ptid);
 
 	uwq.ctx = ctx;
 	uwq.waken = false;
@@ -1294,7 +1294,7 @@ static __always_inline int validate_range(struct mm_struct *mm,
 static int userfaultfd_register(struct userfaultfd_ctx *ctx,
 				unsigned long arg)
 {
-	printk(KERN_INFO "Entering uffd registration\n");
+	//printk(KERN_INFO "Entering uffd registration\n");
 	struct mm_struct *mm = ctx->mm;
 	struct vm_area_struct *vma, *prev, *cur;
 	int ret;
@@ -1969,7 +1969,7 @@ static inline unsigned int uffd_ctx_features(__u64 user_features)
 static int userfaultfd_api(struct userfaultfd_ctx *ctx,
 			   unsigned long arg)
 {
-	printk(KERN_INFO "Entered userfaultfd_api\n");
+	//printk(KERN_INFO "Entered userfaultfd_api\n");
 	struct uffdio_api uffdio_api;
 	void __user *buf = (void __user *)arg;
 	unsigned int ctx_features;
@@ -2020,8 +2020,8 @@ err_out:
 static long userfaultfd_ioctl(struct file *file, unsigned cmd,
 			      unsigned long arg)
 {
-	printk(KERN_INFO "Entered ioctl with cmd=%u\n", cmd);
-	printk(KERN_INFO "Kernel compiled UFFDIO_REGISTER = 0x%x\n", UFFDIO_REGISTER);
+	//printk(KERN_INFO "Entered ioctl with cmd=%u\n", cmd);
+	//printk(KERN_INFO "Kernel compiled UFFDIO_REGISTER = 0x%x\n", UFFDIO_REGISTER);
 	int ret = -EINVAL;
 	struct userfaultfd_ctx *ctx = file->private_data;
 
@@ -2033,12 +2033,12 @@ static long userfaultfd_ioctl(struct file *file, unsigned cmd,
 	switch(cmd) {
 	case UFFDIO_API:
 		ret = userfaultfd_api(ctx, arg);
-		printk(KERN_INFO "Returned from API with ret=%d, ctx->features=0x%x, ctx->mm=%p\n", ret, ctx->features, ctx->mm);
+		//printk(KERN_INFO "Returned from API with ret=%d, ctx->features=0x%x, ctx->mm=%p\n", ret, ctx->features, ctx->mm);
 		break;
 	case UFFDIO_REGISTER:
-		printk(KERN_INFO "IOCTL UFFDIO_REGISTER\n");
+		//printk(KERN_INFO "IOCTL UFFDIO_REGISTER\n");
 		ret = userfaultfd_register(ctx, arg);
-		printk(KERN_INFO "Returned from register with ret=%d\n", ret);
+		//printk(KERN_INFO "Returned from register with ret=%d\n", ret);
 		break;
 	case UFFDIO_UNREGISTER:
 		ret = userfaultfd_unregister(ctx, arg);
@@ -2117,7 +2117,7 @@ static void init_once_userfaultfd_ctx(void *mem)
 
 SYSCALL_DEFINE1(userfaultfd, int, flags)
 {
-	printk(KERN_INFO "Entered syscall userfaultfd\n");
+	//printk(KERN_INFO "Entered syscall userfaultfd\n");
 	struct userfaultfd_ctx *ctx;
 	int fd;
 
@@ -2152,7 +2152,7 @@ SYSCALL_DEFINE1(userfaultfd, int, flags)
 	ctx->mm = current->mm;
 	/* prevent the mm struct to be freed */
 	mmgrab(ctx->mm);
-	printk(KERN_INFO "Setting the MMIO device\n");
+	//printk(KERN_INFO "Setting the MMIO device\n");
 	ctx->dev = global_uffd_mmio_dev;
 
 	fd = anon_inode_getfd_secure("[userfaultfd]", &userfaultfd_fops, ctx,
@@ -2161,9 +2161,9 @@ SYSCALL_DEFINE1(userfaultfd, int, flags)
 		mmdrop(ctx->mm);
 		kmem_cache_free(userfaultfd_ctx_cachep, ctx);
 	}
-	printk(KERN_INFO "Returning file descriptor %d\n", fd);
-	printk(KERN_INFO "userfaultfd ctx=%p mm=%p refcount=%d flags=0x%x features=0x%x released=%d dev=%p\n",
-        ctx, ctx->mm, refcount_read(&ctx->refcount), ctx->flags, ctx->features, ctx->released, ctx->dev);
+	//printk(KERN_INFO "Returning file descriptor %d\n", fd);
+	//printk(KERN_INFO "userfaultfd ctx=%p mm=%p refcount=%d flags=0x%x features=0x%x released=%d dev=%p\n",
+    //    ctx, ctx->mm, refcount_read(&ctx->refcount), ctx->flags, ctx->features, ctx->released, ctx->dev);
 	return fd;
 }
 
