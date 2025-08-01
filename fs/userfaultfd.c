@@ -30,6 +30,7 @@
 #include <linux/security.h>
 #include <linux/hugetlb.h>
 #include <linux/swapops.h>
+#include <linux/types.h>
 
 #include <asm/uintr.h>
 #include <asm/msr.h>
@@ -2020,8 +2021,15 @@ err_out:
 static long userfaultfd_ioctl(struct file *file, unsigned cmd,
 			      unsigned long arg)
 {
-	//printk(KERN_INFO "Entered ioctl with cmd=%u\n", cmd);
-	//printk(KERN_INFO "Kernel compiled UFFDIO_REGISTER = 0x%x\n", UFFDIO_REGISTER);
+	union {
+		u64 val;
+		struct {
+			u32 lo;
+			u32 hi;
+		};
+	} start, end;
+
+	asm volatile ("lfence\n rdtsc\n" : "=a" (start.lo), "=d" (start.hi));
 	int ret = -EINVAL;
 	struct userfaultfd_ctx *ctx = file->private_data;
 
@@ -2033,12 +2041,9 @@ static long userfaultfd_ioctl(struct file *file, unsigned cmd,
 	switch(cmd) {
 	case UFFDIO_API:
 		ret = userfaultfd_api(ctx, arg);
-		//printk(KERN_INFO "Returned from API with ret=%d, ctx->features=0x%x, ctx->mm=%p\n", ret, ctx->features, ctx->mm);
 		break;
 	case UFFDIO_REGISTER:
-		//printk(KERN_INFO "IOCTL UFFDIO_REGISTER\n");
 		ret = userfaultfd_register(ctx, arg);
-		//printk(KERN_INFO "Returned from register with ret=%d\n", ret);
 		break;
 	case UFFDIO_UNREGISTER:
 		ret = userfaultfd_unregister(ctx, arg);
@@ -2048,15 +2053,21 @@ static long userfaultfd_ioctl(struct file *file, unsigned cmd,
 		break;
 	case UFFDIO_COPY:
 		ret = userfaultfd_copy(ctx, arg);
+		asm volatile ("rdtsc\n lfence\n" : "=a" (end.lo), "=d" (end.hi));
+		pr_info("IOCTL duration within kernel: %llu\n", end.val - start.val);
 		break;
 	case UFFDIO_ZEROPAGE:
 		ret = userfaultfd_zeropage(ctx, arg);
+		asm volatile ("rdtsc\n lfence\n" : "=a" (end.lo), "=d" (end.hi));
+		pr_info("IOCTL duration within kernel: %llu\n", end.val - start.val);
 		break;
 	case UFFDIO_WRITEPROTECT:
 		ret = userfaultfd_writeprotect(ctx, arg);
 		break;
 	case UFFDIO_CONTINUE:
 		ret = userfaultfd_continue(ctx, arg);
+		asm volatile ("rdtsc\n lfence\n" : "=a" (end.lo), "=d" (end.hi));
+		pr_info("IOCTL duration within kernel: %llu\n", end.val - start.val);
 		break;
 	default:
 		printk(KERN_INFO "Error: fall through with cmd=%u\n", cmd);
