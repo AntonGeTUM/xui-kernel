@@ -2055,7 +2055,7 @@ static long userfaultfd_ioctl(struct file *file, unsigned cmd,
 	case UFFDIO_COPY:
 		ret = userfaultfd_copy(ctx, arg);
 		break;
-	case UFFDIO_ZEROPAGE:
+	case UFFDIO_ZEROPAGE: {
 		struct uffd_zeropage_wrapper __user *argp = (void __user *)arg;
     	struct uffdio_zeropage zp;
 		if (copy_from_user(&zp, &argp->zp, sizeof(zp)))
@@ -2074,6 +2074,7 @@ static long userfaultfd_ioctl(struct file *file, unsigned cmd,
             ret = -EFAULT;
         }
 		break;
+	}
 	case UFFDIO_WRITEPROTECT:
 		ret = userfaultfd_writeprotect(ctx, arg);
 		break;
