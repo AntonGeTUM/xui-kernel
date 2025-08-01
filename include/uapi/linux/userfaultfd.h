@@ -274,6 +274,11 @@ struct uffdio_zeropage {
 	__s64 zeropage;
 };
 
+struct uffdio_zeropage_wrapper {
+	struct uffdio_zeropage zp;
+	struct timing_info timing;
+};
+
 struct uffdio_writeprotect {
 	struct uffdio_range range;
 /*
