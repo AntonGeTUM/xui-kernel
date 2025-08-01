@@ -2054,25 +2054,18 @@ static long userfaultfd_ioctl(struct file *file, unsigned cmd,
 		break;
 	case UFFDIO_COPY:
 		ret = userfaultfd_copy(ctx, arg);
-		break;
-	case UFFDIO_ZEROPAGE: {
-		struct uffdio_zeropage_wrapper __user *argp = (void __user *)arg;
-    	struct uffdio_zeropage zp;
-		if (copy_from_user(&zp, &argp->zp, sizeof(zp)))
-        	return -EFAULT;
-
-		ret = userfaultfd_zeropage(ctx, &zp);
-
-		if (copy_to_user(&argp->zp, &zp, sizeof(zp)))
-        	return -EFAULT;
-
 		asm volatile ("rdtsc\n lfence\n" : "=a" (end.lo), "=d" (end.hi));
 		duration = end.val - start.val;
-
-		struct timing_info info = { .duration = duration };
-        if (copy_to_user(&argp->timing, &info, sizeof(info))) {
-            ret = -EFAULT;
-        }
+		if (ret == 0) {
+			return duration;
+		}
+		break;
+	case UFFDIO_ZEROPAGE: {
+		ret = userfaultfd_zeropage(ctx, arg);
+		asm volatile ("rdtsc\n lfence\n" : "=a" (end.lo), "=d" (end.hi));
+		duration = end.val - start.val;
+		if (ret == 0)
+			return duration;
 		break;
 	}
 	case UFFDIO_WRITEPROTECT:
@@ -2080,6 +2073,10 @@ static long userfaultfd_ioctl(struct file *file, unsigned cmd,
 		break;
 	case UFFDIO_CONTINUE:
 		ret = userfaultfd_continue(ctx, arg);
+		asm volatile ("rdtsc\n lfence\n" : "=a" (end.lo), "=d" (end.hi));
+		duration = end.val - start.val;
+		if (ret == 0)
+			return duration;
 		break;
 	default:
 		printk(KERN_INFO "Error: fall through with cmd=%u\n", cmd);

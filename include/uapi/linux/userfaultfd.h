@@ -11,11 +11,6 @@
 #define _LINUX_USERFAULTFD_H
 
 #include <linux/types.h>
-
-struct timing_info {
-    __u64 duration;
-};
-
 /*
  * If the UFFDIO_API is upgraded someday, the UFFDIO_UNREGISTER and
  * UFFDIO_WAKE ioctls should be defined as _IOW and not as _IOR.  In
@@ -272,11 +267,6 @@ struct uffdio_zeropage {
 	 * the copy_from_user will not read the last 8 bytes.
 	 */
 	__s64 zeropage;
-};
-
-struct uffdio_zeropage_wrapper {
-	struct uffdio_zeropage zp;
-	struct timing_info timing;
 };
 
 struct uffdio_writeprotect {
