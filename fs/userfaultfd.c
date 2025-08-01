@@ -2030,6 +2030,7 @@ static long userfaultfd_ioctl(struct file *file, unsigned cmd,
 	} start, end;
 
 	asm volatile ("lfence\n rdtsc\n" : "=a" (start.lo), "=d" (start.hi));
+	u64 duration = 0;
 	int ret = -EINVAL;
 	struct userfaultfd_ctx *ctx = file->private_data;
 
@@ -2054,12 +2055,12 @@ static long userfaultfd_ioctl(struct file *file, unsigned cmd,
 	case UFFDIO_COPY:
 		ret = userfaultfd_copy(ctx, arg);
 		asm volatile ("rdtsc\n lfence\n" : "=a" (end.lo), "=d" (end.hi));
-		pr_info("IOCTL duration within kernel: %llu\n", end.val - start.val);
+		duration = end.val - start.val;
 		break;
 	case UFFDIO_ZEROPAGE:
 		ret = userfaultfd_zeropage(ctx, arg);
 		asm volatile ("rdtsc\n lfence\n" : "=a" (end.lo), "=d" (end.hi));
-		pr_info("IOCTL duration within kernel: %llu\n", end.val - start.val);
+		duration = end.val - start.val;
 		break;
 	case UFFDIO_WRITEPROTECT:
 		ret = userfaultfd_writeprotect(ctx, arg);
@@ -2067,10 +2068,16 @@ static long userfaultfd_ioctl(struct file *file, unsigned cmd,
 	case UFFDIO_CONTINUE:
 		ret = userfaultfd_continue(ctx, arg);
 		asm volatile ("rdtsc\n lfence\n" : "=a" (end.lo), "=d" (end.hi));
-		pr_info("IOCTL duration within kernel: %llu\n", end.val - start.val);
+		duration = end.val - start.val;
 		break;
 	default:
 		printk(KERN_INFO "Error: fall through with cmd=%u\n", cmd);
+	}
+	if (cmd == UFFDIO_ZEROPAGE || cmd == UFFDIO_COPY || cmd == UFFDIO_CONTINUE) {
+		struct timing_info info = { .duration = duration };
+        if (copy_to_user((void __user *)arg, &info, sizeof(info))) {
+            ret = -EFAULT;
+        }
 	}
 	return ret;
 }

@@ -12,6 +12,10 @@
 
 #include <linux/types.h>
 
+struct timing_info {
+    __u64 duration;
+};
+
 /*
  * If the UFFDIO_API is upgraded someday, the UFFDIO_UNREGISTER and
  * UFFDIO_WAKE ioctls should be defined as _IOW and not as _IOR.  In
