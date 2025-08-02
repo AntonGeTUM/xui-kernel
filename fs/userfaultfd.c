@@ -1797,7 +1797,7 @@ static int userfaultfd_zeropage(struct userfaultfd_ctx *ctx,
 			u32 lo;
 			u32 hi;
 		};
-	} t0, t1, t2, t3, t4;
+	} t0, t1, t2, t3, t4, t5;
 	asm volatile ("rdtsc\n lfence\n" : "=a" (t0.lo), "=d" (t0.hi));
 
 	__s64 ret;
@@ -1843,6 +1843,8 @@ static int userfaultfd_zeropage(struct userfaultfd_ctx *ctx,
 		return -EFAULT;
 	if (ret < 0)
 		goto out;
+
+	asm volatile ("rdtsc\n lfence\n" : "=a" (t4.lo), "=d" (t4.hi));
 	/* len == 0 would wake all */
 	BUG_ON(!ret);
 	range.len = ret;
@@ -1852,9 +1854,9 @@ static int userfaultfd_zeropage(struct userfaultfd_ctx *ctx,
 	}
 	ret = range.len == uffdio_zeropage.range.len ? 0 : -EAGAIN;
 out:
-	asm volatile ("rdtsc\n lfence\n" : "=a" (t4.lo), "=d" (t4.hi));
+	asm volatile ("rdtsc\n lfence\n" : "=a" (t5.lo), "=d" (t5.hi));
 
-	pr_info("userfaultfd_zeropage latencies: copy=%llu, validate=%llu, mfill=%llu, put&wake=%llu ==> total=%llu\n", t1.val - t0.val, t2.val - t1.val, t3.val - t2.val, t4.val - t3.val, t4.val - t0.val);
+	pr_info("userfaultfd_zeropage latencies: copy=%llu, validate=%llu, mfill=%llu, put_user=%llu, wake_user=%llu ==> total=%llu\n", t1.val - t0.val, t2.val - t1.val, t3.val - t2.val, t4.val - t3.val, t5.val - t4.val, t5.val - t0.val);
 	return ret;
 }
 
