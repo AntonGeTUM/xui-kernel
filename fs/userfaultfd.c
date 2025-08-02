@@ -1791,6 +1791,15 @@ out:
 static int userfaultfd_zeropage(struct userfaultfd_ctx *ctx,
 				unsigned long arg)
 {
+	union {
+		u64 val;
+		struct {
+			u32 lo;
+			u32 hi;
+		};
+	} t0, t1, t2, t3, t4;
+	asm volatile ("rdtsc\n lfence\n" : "=a" (t0.lo), "=d" (t0.hi));
+
 	__s64 ret;
 	struct uffdio_zeropage uffdio_zeropage;
 	struct uffdio_zeropage __user *user_uffdio_zeropage;
@@ -1808,6 +1817,8 @@ static int userfaultfd_zeropage(struct userfaultfd_ctx *ctx,
 			   sizeof(uffdio_zeropage)-sizeof(__s64)))
 		goto out;
 
+	asm volatile ("rdtsc\n lfence\n" : "=a" (t1.lo), "=d" (t1.hi));
+
 	ret = validate_range(ctx->mm, uffdio_zeropage.range.start,
 			     uffdio_zeropage.range.len);
 	if (ret)
@@ -1815,6 +1826,8 @@ static int userfaultfd_zeropage(struct userfaultfd_ctx *ctx,
 	ret = -EINVAL;
 	if (uffdio_zeropage.mode & ~UFFDIO_ZEROPAGE_MODE_DONTWAKE)
 		goto out;
+
+	asm volatile ("rdtsc\n lfence\n" : "=a" (t2.lo), "=d" (t2.hi));
 
 	if (mmget_not_zero(ctx->mm)) {
 		ret = mfill_zeropage(ctx->mm, uffdio_zeropage.range.start,
@@ -1824,6 +1837,8 @@ static int userfaultfd_zeropage(struct userfaultfd_ctx *ctx,
 	} else {
 		return -ESRCH;
 	}
+	asm volatile ("rdtsc\n lfence\n" : "=a" (t3.lo), "=d" (t3.hi));
+
 	if (unlikely(put_user(ret, &user_uffdio_zeropage->zeropage)))
 		return -EFAULT;
 	if (ret < 0)
@@ -1837,6 +1852,9 @@ static int userfaultfd_zeropage(struct userfaultfd_ctx *ctx,
 	}
 	ret = range.len == uffdio_zeropage.range.len ? 0 : -EAGAIN;
 out:
+	asm volatile ("rdtsc\n lfence\n" : "=a" (t4.lo), "=d" (t4.hi));
+
+	pr_info("userfaultfd_zeropage latencies: copy=%llu, validate=%llu, mfill=%llu, put&wake=%llu ==> total=%llu\n", t1.val - t0.val, t2.val - t1.val, t3.val - t2.val, t4.val - t3.val, t4.val - t0.val)
 	return ret;
 }
 
