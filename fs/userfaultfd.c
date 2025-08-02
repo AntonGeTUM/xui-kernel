@@ -1854,7 +1854,7 @@ static int userfaultfd_zeropage(struct userfaultfd_ctx *ctx,
 out:
 	asm volatile ("rdtsc\n lfence\n" : "=a" (t4.lo), "=d" (t4.hi));
 
-	pr_info("userfaultfd_zeropage latencies: copy=%llu, validate=%llu, mfill=%llu, put&wake=%llu ==> total=%llu\n", t1.val - t0.val, t2.val - t1.val, t3.val - t2.val, t4.val - t3.val, t4.val - t0.val)
+	pr_info("userfaultfd_zeropage latencies: copy=%llu, validate=%llu, mfill=%llu, put&wake=%llu ==> total=%llu\n", t1.val - t0.val, t2.val - t1.val, t3.val - t2.val, t4.val - t3.val, t4.val - t0.val);
 	return ret;
 }
 
